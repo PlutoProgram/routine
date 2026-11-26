@@ -63,6 +63,15 @@ textarea{height:130px;font-family:"DM Mono",ui-monospace,monospace;font-size:12p
 .empty{color:var(--mut);padding:8px 0}
 .form label{display:flex;align-items:center;gap:6px;color:var(--mut)}
 .card.task.ev{border-left-color:var(--red)}
+.btn.plus{width:100%;margin:12px 0;padding:14px;font-size:16px;background:transparent;border-style:dashed;color:var(--ink)}
+.sheetform{display:none}
+.sheetform.open{display:flex;flex-direction:column;gap:14px;position:fixed;left:0;right:0;top:0;z-index:30;margin:0;background:var(--card);border-bottom:3px solid var(--ink);border-radius:0 0 16px 16px;padding:calc(16px + env(safe-area-inset-top,0px)) 16px 18px;max-height:100%;overflow:auto;box-shadow:0 0 0 100vmax rgba(0,0,0,.55)}
+.shh{display:flex;justify-content:space-between;align-items:center;font-size:20px}
+.sheetform input,.sheetform label{font-size:16px}
+.sheetform>input{width:100%}
+.sheetform label{justify-content:space-between}
+.sheetform label input{width:58%!important}
+.sheetform .btn{width:100%;padding:14px}
 .card.task{border-left:8px solid var(--acc);border-radius:4px 10px 10px 4px}
 .task .grow>div:first-child{font-family:"DM Mono",ui-monospace,Menlo,monospace;font-size:15px}
 </style></head><body><main id="app"></main>
@@ -166,12 +175,18 @@ return `<h1>Backup</h1><p class="sub">Deine Daten liegen nur auf diesem Gerät. 
 function render(){
 const v={heute:vHeute,kal:vKal,todos:vTodos,rout:vRout,backup:vBackup}[tab]();
 document.getElementById('app').innerHTML=v;
+document.querySelectorAll('#app .form').forEach(f=>{const ad=f.querySelector('[data-a^="add"]');if(!ad)return;
+const L={addt:'Neues Todo',adde:'Neuer Termin',addh:'Neue Gewohnheit',addw:'Neue Wochen-Aufgabe',addi:'Neue Idee'}[ad.dataset.a];
+ad.textContent='Speichern';f.classList.add('sheetform');
+f.insertAdjacentHTML('afterbegin',`<div class="shh"><b>${L}</b><button class="x" data-a="cls" style="font-size:15px;font-weight:800">Abbrechen</button></div>`);
+f.insertAdjacentHTML('beforebegin',`<button class="btn plus" data-a="opn">+ ${L}</button>`)});
 document.getElementById('nav').innerHTML=[['heute','Heute'],['kal','Kalender'],['todos','Todos'],['rout','Routinen'],['backup','Backup']].map(([k,l])=>`<button data-a="tab" data-t="${k}" class="${tab===k?'on':''}">${l}</button>`).join('');
 if(tab==='backup')document.getElementById('bk').value=JSON.stringify(S);
 }
 const val=id=>document.getElementById(id).value.trim();
 document.addEventListener('click',e=>{
 const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,id=b.dataset.id,t=today();if(a!=='delh'&&a!=='delw'&&a!=='deli'&&a!=='dele'&&a!=='delt'&&a!=='imp')pd='';
+if(a==='opn'){const f=b.nextElementSibling;f.classList.add('open');const i=f.querySelector('input');if(i)i.focus();return}
 if(a==='tab'){tab=b.dataset.t;msg=''}
 else if(a==='inc'){const h=S.habits.find(x=>x.id===id);S.log[t]=S.log[t]||{};const c=cnt(t,id)+1;S.log[t][id]=c>h.target?0:c}
 else if(a==='edit')edit=!edit;
@@ -195,5 +210,6 @@ try{navigator.clipboard.writeText(el.value);ok=true}catch(_){try{ok=document.exe
 S.lastBackup=Date.now();save();msg=ok?'Kopiert. Jetzt irgendwo einfügen und speichern.':'Text markieren und manuell kopieren.';render();return}
 else if(a==='imp'){try{const d=JSON.parse(val('im'));if(!d.habits||!d.log)throw 0;if(pd!=='imp'){pd='imp';document.getElementById('msg').textContent='Tippe nochmal auf Wiederherstellen, um alle aktuellen Daten zu ersetzen.';return}pd='';S=d;S.weekly=S.weekly||[];S.wlog=S.wlog||{};S.ideas=S.ideas||[];msg='Wiederhergestellt.'}catch(_){msg='Das war kein gültiges Backup.'}}
 save();render()});
+document.addEventListener('click',e=>{const o=document.querySelector('.sheetform.open');if(o&&!o.contains(e.target)){e.stopPropagation();e.preventDefault();render()}},true);
 render();
 </script></body></html>
